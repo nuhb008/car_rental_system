@@ -1,0 +1,12 @@
+[
+  {
+    "id": "BK001",
+    "customerName": "Rahim Ahmed",
+    "customerEmail": "rahim@gmail.com",
+    "carName": "Toyota Corolla",
+    "startDate": "2026-10-10",
+    "endDate": "2026-10-12",
+    "totalAmount": 8500,
+    "status": "Pending"
+  }
+]
