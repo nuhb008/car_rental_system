@@ -1,7 +1,7 @@
-
 "use client";
 
-import { useState } from "react";
+import { useActionState, useState } from "react";
+import { armNextBookingFailure,updateBookingStatus } from "@/app/bookings/actions";
 import type { Booking, BookingStatus } from "@/lib/types";
 
 type BookingTableProps = {
@@ -40,11 +40,19 @@ function getStatusClass(status: BookingStatus): string {
 export default function BookingTable({
   bookings,
 }: BookingTableProps) {
-  const [selectedBooking, setSelectedBooking] =
-    useState<Booking | null>(null);
+  const [selectedBookingId, setSelectedBookingId] =
+  useState<string | null>(null);
+
+  const selectedBooking =
+  bookings.find((booking) => booking.id === selectedBookingId) ?? null;
+
+  const [state, formAction, isPending] = useActionState(
+  updateBookingStatus,
+  { success: false, message: "" }
+  );
 
   function closeModal() {
-    setSelectedBooking(null);
+    setSelectedBookingId(null);
   }
 
   return (
@@ -106,7 +114,7 @@ export default function BookingTable({
                 <td className="px-5 py-4">
                   <button
                     type="button"
-                    onClick={() => setSelectedBooking(booking)}
+                    onClick={() => setSelectedBookingId(booking.id)}
                     className="whitespace-nowrap rounded-lg border border-indigo-200 px-3 py-2 text-sm font-medium text-indigo-700 hover:bg-indigo-50"
                   >
                     View details
@@ -218,6 +226,94 @@ export default function BookingTable({
                   {selectedBooking.status}
                 </span>
               </div>
+              
+                  {selectedBooking.status !== "Cancelled" && (
+                    <form action={formAction} className="mt-6 space-y-4">
+                      <input
+                        type="hidden"
+                        name="bookingId"
+                        value={selectedBooking.id}
+                      />
+
+                      {isPending && (
+                        <p role="status" className="text-sm text-indigo-600">
+                          Saving booking status... Please wait.
+                        </p>
+                      )}
+
+                      <div>
+                        <label
+                          htmlFor="cancellationReason"
+                          className="block text-sm font-medium text-gray-700"
+                        >
+                          Cancellation reason
+                        </label>
+
+                        <textarea
+                          id="cancellationReason"
+                          name="cancellationReason"
+                          rows={3}
+                          maxLength={200}
+                          placeholder="Enter a reason if cancelling (10–200 characters)"
+                          className="mt-2 w-full rounded-lg border border-gray-300 p-3 text-sm"
+                        />
+
+                        <p className="mt-1 text-xs text-gray-500">
+                          Required only when cancelling.
+                        </p>
+                      </div>
+
+                      {state.message && (
+                        <p
+                          role="status"
+                          className={`text-sm ${
+                            state.success ? "text-green-700" : "text-red-600"
+                          }`}
+                        >
+                          {state.message}
+                        </p>
+                      )}
+
+                      <div className="flex flex-wrap gap-3">
+                        {selectedBooking.status === "Pending" && (
+                          <button
+                            type="submit"
+                            name="status"
+                            value="Confirmed"
+                            disabled={isPending}
+                            className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white disabled:opacity-50"
+                          >
+                            {isPending ? "Saving..." : "Confirm booking"}
+                          </button>
+                        )}
+
+                        <button
+                          type="submit"
+                          name="status"
+                          value="Cancelled"
+                          disabled={isPending}
+                          className="rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white disabled:opacity-50"
+                        >
+                          {isPending ? "Saving..." : "Cancel booking"}
+                        </button>
+                      </div>
+                    </form>
+                  )}
+
+                  {process.env.NODE_ENV === "development" && (
+                    <form action={armNextBookingFailure} className="mt-4">
+                      <button
+                        type="submit"
+                        className="rounded-lg border border-amber-300 px-3 py-2 text-sm text-amber-800 hover:bg-amber-50"
+                      >
+                        Simulate next update failure
+                      </button>
+
+                      <p className="mt-1 text-xs text-gray-500">
+                        Testing only: the next valid status update will fail once.
+                      </p>
+                    </form>
+                  )}
             </div>
 
             <div className="mt-7 flex justify-end">

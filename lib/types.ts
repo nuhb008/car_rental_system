@@ -12,4 +12,5 @@ export type Booking = {
   endDate: string;
   totalAmount: number;
   status: BookingStatus;
+  cancellationReason?: string;
 };
